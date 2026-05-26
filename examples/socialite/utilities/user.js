@@ -25,7 +25,7 @@ export const userExists = async (username) => {
  * @param {import('express').Request} req
  * @param {import('express').Response} res
  */
-export const updateUser = async (id, req, res) => {
+export const updateUser = async (req, res, id) => {
   const params = toParamsAndValues(req.body);
 
   await db.run(`UPDATE users SET ${params} WHERE id = ?`, [id]);

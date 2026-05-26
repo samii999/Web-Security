@@ -1,10 +1,43 @@
 <div class="container max-w-2xl space-y-8">
+
+<form
+
+  <div class="w-full">
+
+    name="content"
+
+    placeholder="What's on your mind?"
+
+    maxlength="140"
+
+    required
+
+    />
+
+  </div>
+
+  <input type="hidden" name="-csrf" value="{{token}}" />
+
+  <button type="submit" class="lg:max-w-fit button-small">Post</button>
+
+  </form>
+
+
+
   {{#if user}}
+
     <create-post></create-post>
+
   {{/if}}
 
+
+
   <socialite-posts
+
     posts="{{json posts}}"
+
     user="{{json user}}"
+
   ></socialite-posts>
+
 </div>

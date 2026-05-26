@@ -11,5 +11,5 @@ form.addEventListener('submit', (event) => {
   const participant = participantInput.value;
   const message = messageInput.value;
 
-  iframe.contentWindow?.postMessage({ participant, message }, '*');
+  iframe.contentWindow?.postMessage({ participant, message }, 'http://localhost:4108');
 });

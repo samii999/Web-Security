@@ -14,10 +14,25 @@ console.log(
   `${chalk.bgBlue('Victim')}: ${chalk.blue(`http://localhost:${victimPort}`)}`
 );
 
-concurrently([
+const { result } = concurrently([
   {
-    command: `PORT=${attackerPort} VICTIM_PORT=${victimPort} node attacker.js`,
+    command: 'node attacker.js',
     name: 'attacker',
+    env: {
+      PORT: attackerPort.toString(),
+      VICTIM_PORT: victimPort.toString(),
+    },
   },
-  { command: `PORT=${victimPort} node victim.js`, name: 'victim' },
+  {
+    command: 'node victim.js',
+    name: 'victim',
+    env: {
+      PORT: victimPort.toString(),
+    },
+  },
 ]);
+
+result.catch((error) => {
+  console.error('Error running servers:', error);
+  process.exit(1);
+});

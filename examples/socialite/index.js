@@ -1,6 +1,10 @@
 import { startServer, createServer } from '#shared';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
 
-import { db } from './database.js';
+import { db, createSession, getSession } from './database.js';
+import { v4 as uuid } from 'uuid';
+import crypto from 'crypto';
 
 import {
   authenticate,
@@ -11,10 +15,37 @@ import {
 
 import { userExists, updateUser } from './utilities/index.js';
 
+const __dirname = dirname(fileURLToPath(import.meta.url));
 const app = createServer({ viewEngine: 'handlebars' });
+app.set('views', join(__dirname, 'views'));
 
 app.use(currentUser);
 app.use(methodOverride);
+
+// Password hashing functions
+/**
+ * Hashes a password using PBKDF2
+ * @param {string} password - The password to hash
+ * @returns {{salt: string, hash: string}} The salt and hash
+ */
+const hashPassword = (password) => {
+  const salt = crypto.randomBytes(16).toString('hex');
+  const hash = crypto.pbkdf2Sync(password, salt, 10000, 64, 'sha512').toString('hex');
+  return { salt, hash };
+};
+
+/**
+ * Verifies a password against a salt and hash
+ * @param {string} password - The password to verify
+ * @param {string} salt - The salt used for hashing
+ * @param {string} hash - The hash to verify against
+ * @returns {boolean} Whether the password is valid
+ */
+const verifyPassword = (password, salt, hash) => {
+  const hashVerify = crypto.pbkdf2Sync(password, salt, 10000, 64, 'sha512').toString('hex');
+  return hash === hashVerify;
+};
+
 
 app.get('/', async (req, res) => {
   const limit = req.query.limit || 50;
@@ -44,17 +75,18 @@ app.post('/login', async (req, res) => {
   const { username, password } = req.body;
 
   const user = await db.get(
-    'SELECT * FROM users WHERE username = ? AND password = ?',
-    [username, password]
+    'SELECT * FROM users WHERE username = ?',
+    [username]
   );
 
-  if (!user) {
+  if (!user || !verifyPassword(password, user.salt, user.hash)) {
     return res
       .status(400)
       .render('login', { error: 'Invalid login credentials.' });
   }
+   const sessionId = createSession (user .id);
 
-  res.cookie('sessionId', user.id);
+  res.cookie('sessionId', sessionId);
   res.redirect('/');
 });
 
@@ -75,14 +107,16 @@ app.post('/account', async (req, res) => {
   }
 
   try {
+    const { salt, hash } = hashPassword(password);
     const { lastID } = await db.run(
-      'INSERT INTO users (username, password) VALUES (?, ?)',
-      [username, password]
+      'INSERT INTO users (username, password, salt, hash) VALUES (?, ?, ?, ?)',
+      [username, '', salt, hash]
     );
 
     const user = await db.get('SELECT id FROM users WHERE id = ?', [lastID]);
-
-    res.cookie('sessionId', user.id);
+    
+    const sessionId = createSession(user.id);
+    res.cookie('sessionId', sessionId);
     res.redirect('/');
   } catch (error) {
     console.error(error);
@@ -99,7 +133,7 @@ app.post('/account', async (req, res) => {
 
 app.patch('/account', authenticate, async (req, res) => {
   try {
-    await updateUser(req.user.id, req, res);
+    await updateUser(req, res, req.user.id);
     res.render('profile', { title: 'Profile', message: 'Profile updated.' });
   } catch (error) {
     console.error(error);
@@ -136,7 +170,11 @@ app.get('/posts', async (req, res) => {
 
 // Create post
 app.post('/posts', authenticate, async (req, res) => {
-  const { content } = req.body;
+  const { content, _csrf } = req.body;
+
+  if (_csrf !== res.locals.session.token()) {
+    return res.status(403).send({ error: 'CSRF token mismatch.' });
+  }
 
   const { lastID } = await db.run(
     'INSERT INTO posts (userId, content) VALUES (?, ?)',
@@ -190,7 +228,7 @@ app.patch('/users/:id', authenticate, isAdministrator, async (req, res) => {
   const { id } = req.params;
 
   try {
-    await updateUser(id, req.body, res);
+    await updateUser(req, res, id);
     res.send({ message: 'User updated successfully.' });
   } catch (error) {
     res.status(500).send({ error: 'Internal server error.' });
