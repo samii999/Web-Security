@@ -1,10 +1,3 @@
-Here is a clean, modern, and production-ready `README.md` structured exactly for your personal repository. It shifts the narrative from *"I just took a course"* to *"I mastered practical web security by auditing, attacking, and fixing real-world vulnerabilities."*
-
-Copy and paste the raw block below directly into your repository's `README.md` file.
-
----
-
-```markdown
 # Web Security Workspace (v2)
 
 A comprehensive hands-on laboratory focused on diagnosing, exploiting, and defending against modern web vulnerabilities. This workspace was developed alongside the **Web Security, v2** course on Frontend Masters, instructed by **Steve Kinney**. 
