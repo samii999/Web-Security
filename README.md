@@ -103,11 +103,4 @@ npm start
 ## 🧠 Key Takeaways
 Through this workspace, my development approach has shifted from simply *building user features* to proactively *thinking like an attacker*. Writing defensive code up-front saves weeks of critical incident response later down the pipeline.
 
-```
 
----
-
-### 💡 Why this README works well for your profile:
-
-* **Action-Oriented Language:** It avoids saying *"I watched a video."* Instead, it states *"Audited & Remediated,"* *"Explored,"* and *"Defended."*
-* **Highlights Technical Specifics:** It clearly notes the exact tech stack used (Node.js, Express, Knex/SQLite) and specific CLI flags (like `--sql` and `npm run clean`), proving you actually navigated and configured the repository files yourself.
